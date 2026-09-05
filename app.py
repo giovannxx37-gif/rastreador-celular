@@ -1,6 +1,6 @@
 """
 Cell Phone Tracker — Production Server
-Version : 4.0.0
+Version : 4.1.0
 Database: SQLite (dev) · PostgreSQL (prod) · Redis (cache)
 """
 
@@ -283,14 +283,62 @@ HTML = """<!DOCTYPE html>
   <style>
     :root{--bg:#0d1117;--s:#161b22;--b:#30363d;--a:#58a6ff;--err:#f85149;--ok:#3fb950;--t:#e6edf3;--m:#8b949e;--r:8px}
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--t);min-height:100vh}
+
+    /* ---------- Fondo futurista (SVG + CSS, sin imágenes externas) ---------- */
+    html,body{height:100%}
+    body{
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      color:var(--t);
+      min-height:100vh;
+      position:relative;
+      isolation:isolate;
+      background-color:#060a0f;
+      background-image:
+        radial-gradient(circle at 15% 10%, rgba(63,185,80,.10) 0%, transparent 40%),
+        radial-gradient(circle at 85% 15%, rgba(88,166,255,.16) 0%, transparent 45%),
+        radial-gradient(circle at 50% 100%, rgba(88,166,255,.10) 0%, transparent 55%),
+        linear-gradient(180deg,#05070a 0%,#0a0f16 40%,#080b10 100%);
+      background-attachment:fixed;
+      overflow-x:hidden;
+    }
+    /* grid tecnológico */
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      z-index:-2;
+      background-image:
+        linear-gradient(rgba(88,166,255,.07) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(88,166,255,.07) 1px, transparent 1px);
+      background-size:42px 42px;
+      -webkit-mask-image:radial-gradient(circle at 50% 30%, #000 0%, transparent 75%);
+      mask-image:radial-gradient(circle at 50% 30%, #000 0%, transparent 75%);
+      animation:gridDrift 30s linear infinite;
+    }
+    @keyframes gridDrift{
+      0%{background-position:0 0,0 0}
+      100%{background-position:42px 42px,42px 42px}
+    }
+    /* "orbe" de energía flotante, hecho en SVG puro */
+    .orb{
+      position:fixed;
+      z-index:-1;
+      pointer-events:none;
+      opacity:.55;
+      filter:blur(.5px);
+    }
+    .orb-1{top:-120px;right:-120px;width:340px;height:340px;animation:float1 14s ease-in-out infinite}
+    .orb-2{bottom:-140px;left:-100px;width:300px;height:300px;animation:float2 18s ease-in-out infinite}
+    @keyframes float1{0%,100%{transform:translate(0,0)}50%{transform:translate(-18px,22px)}}
+    @keyframes float2{0%,100%{transform:translate(0,0)}50%{transform:translate(16px,-18px)}}
+
     a{color:var(--a);text-decoration:none}
-    header{padding:14px 20px;border-bottom:1px solid var(--b);background:var(--s);display:flex;align-items:center;gap:10px}
+    header{padding:14px 20px;border-bottom:1px solid var(--b);background:rgba(22,27,34,.75);backdrop-filter:blur(6px);display:flex;align-items:center;gap:10px;position:relative;z-index:1}
     header h1{font-size:.95rem;font-weight:600}
     .live{font-size:.65rem;padding:2px 7px;border-radius:20px;background:var(--ok);color:#000;font-weight:700;animation:pulse 2s infinite}
     @keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
-    .wrap{max-width:580px;margin:0 auto;padding:20px 16px}
-    .login{background:var(--s);border:1px solid var(--b);border-radius:var(--r);padding:32px 24px;margin-top:60px}
+    .wrap{max-width:580px;margin:0 auto;padding:20px 16px;position:relative;z-index:1}
+    .login{background:rgba(22,27,34,.85);backdrop-filter:blur(8px);border:1px solid var(--b);border-radius:var(--r);padding:32px 24px;margin-top:60px;box-shadow:0 0 40px rgba(88,166,255,.08)}
     .login h2{font-size:1.05rem;margin-bottom:18px}
     .err{color:var(--err);font-size:.82rem;margin-bottom:10px}
     input{width:100%;padding:10px 12px;background:var(--bg);border:1px solid var(--b);border-radius:var(--r);color:var(--t);font-size:.92rem;margin-bottom:12px;outline:none}
@@ -298,7 +346,7 @@ HTML = """<!DOCTYPE html>
     .btn{display:block;width:100%;padding:10px;background:var(--a);color:#000;border:none;border-radius:var(--r);font-weight:600;font-size:.92rem;cursor:pointer;text-align:center;transition:opacity .15s}
     .btn:hover{opacity:.85}
     .btn-o{background:transparent;color:var(--a);border:1px solid var(--a)}
-    .card{background:var(--s);border:1px solid var(--b);border-radius:var(--r);padding:16px;margin-bottom:14px}
+    .card{background:rgba(22,27,34,.85);backdrop-filter:blur(8px);border:1px solid var(--b);border-radius:var(--r);padding:16px;margin-bottom:14px;box-shadow:0 0 30px rgba(88,166,255,.05)}
     .card-title{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--m);margin-bottom:12px}
     .row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--b);font-size:.85rem}
     .row:last-child{border-bottom:none}
@@ -316,6 +364,40 @@ HTML = """<!DOCTYPE html>
   </style>
 </head>
 <body>
+<!-- Orbes decorativos SVG (100% originales, sin licencias externas) -->
+<svg class="orb orb-1" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="g1" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#58a6ff" stop-opacity="0.55"/>
+      <stop offset="60%" stop-color="#1f6feb" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#0d1117" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <circle cx="100" cy="100" r="100" fill="url(#g1)"/>
+  <g stroke="#58a6ff" stroke-opacity="0.35" fill="none" stroke-width="0.6">
+    <circle cx="100" cy="100" r="70"/>
+    <circle cx="100" cy="100" r="50"/>
+    <ellipse cx="100" cy="100" rx="90" ry="35" transform="rotate(25 100 100)"/>
+    <ellipse cx="100" cy="100" rx="90" ry="35" transform="rotate(-25 100 100)"/>
+  </g>
+</svg>
+<svg class="orb orb-2" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="g2" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#3fb950" stop-opacity="0.45"/>
+      <stop offset="60%" stop-color="#238636" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#0d1117" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <circle cx="100" cy="100" r="100" fill="url(#g2)"/>
+  <g stroke="#3fb950" stroke-opacity="0.3" fill="none" stroke-width="0.6">
+    <circle cx="100" cy="100" r="65"/>
+    <circle cx="100" cy="100" r="42"/>
+    <ellipse cx="100" cy="100" rx="88" ry="30" transform="rotate(15 100 100)"/>
+    <ellipse cx="100" cy="100" rx="88" ry="30" transform="rotate(-40 100 100)"/>
+  </g>
+</svg>
+
 <header>
   <span>📍</span><h1>Rastreador de Celular</h1>
   {% if view == 'dashboard' and latest %}<span class="live">EN VIVO</span>{% endif %}
@@ -432,7 +514,7 @@ def recibir_ubicacion():
 def health():
     return jsonify({
         "status": "ok",
-        "version": "4.0.0",
+        "version": "4.1.0",
         "db_backend": Config.db_backend(),
         "total_registros": db.count(),
         "ultima": (db.latest() or {}).get("created_at"),
@@ -455,3 +537,4 @@ def server_error(e):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=False)
+
